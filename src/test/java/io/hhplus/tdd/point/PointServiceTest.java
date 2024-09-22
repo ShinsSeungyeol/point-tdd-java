@@ -31,7 +31,6 @@ class PointServiceTest {
         MockitoAnnotations.initMocks(this);
     }
 
-
     /**
      * <p>{@code PointService.searchUserPoint} 메서드에 대한 테스트입니다.</p>
      */
@@ -45,6 +44,9 @@ class PointServiceTest {
         Assertions.assertEquals(0, actualUserPoint.point());
     }
 
+    /**
+     * <p>{@code PointService.searchUserHistories} 메서드에 대한 테스트입니다.</p>
+     */
     @Test
     public void 포인트_히스토리_목록_조회_테스트() {
         when(pointHistoryTable.selectAllByUserId(1L)).thenReturn(List.of());
@@ -54,5 +56,18 @@ class PointServiceTest {
         Assertions.assertEquals(0, actualPointHistories.size());
     }
 
+    @Test
+    public void 포인트_충전은_최대_잔고량을_넘으면_안된다() {
+        long amountToCharge = 10001, userId = 1;
+
+        when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(userId));
+        when(userPointTable.insertOrUpdate(userId, amountToCharge)).thenReturn(
+            new UserPoint(userId, amountToCharge, System.currentTimeMillis()));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            pointService.chargeUserPoint(userId, amountToCharge);
+        });
+
+    }
 
 }

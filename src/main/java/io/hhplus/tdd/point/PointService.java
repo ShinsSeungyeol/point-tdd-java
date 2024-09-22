@@ -7,4 +7,6 @@ public interface PointService {
     UserPoint searchUserPoint(long userId);
 
     List<PointHistory> searchPointHistories(long userId);
+
+    UserPoint chargeUserPoint(long userId, long amountToCharge);
 }
