@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PointServiceImpl implements PointService {
 
-
+    private final PolicyChecker policyChecker;
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
 
@@ -27,15 +27,9 @@ public class PointServiceImpl implements PointService {
     @Override
     public UserPoint chargeUserPoint(long userId, long amountToCharge) {
         UserPoint userPoint = searchUserPoint(userId);
-        long remainingPoint = userPoint.point();
+        long remainingAmount = userPoint.point();
 
-        if (amountToCharge <= 0) {
-            throw new IllegalArgumentException("0 이하의 포인트를 충전할 수 없습니다.");
-        }
-
-        if (remainingPoint + amountToCharge > PointConstant.MAX_TOTAL_AMOUNT_LIMIT) {
-            throw new IllegalArgumentException("최대 잔고를 초과하여 충전할 수 없습니다.");
-        }
+        policyChecker.checkChargePolicy(remainingAmount, amountToCharge);
 
         pointHistoryTable.insert(userId, amountToCharge, TransactionType.CHARGE,
             System.currentTimeMillis());
