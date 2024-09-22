@@ -66,7 +66,7 @@ class PointServiceTest {
      * <pre>사용자가 충전할 때, 0을 초과하고 10000 포인트 이하의 충전은 정상동작 해야 합니다 </pre>
      */
     @Test
-    public void 포인트_충전은_테스트() {
+    public void 포인트_충전_테스트() {
         long amountToCharge = PointConstant.MAX_BALANCE_AMOUNT_LIMIT, userId = 1;
 
         when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(userId));
