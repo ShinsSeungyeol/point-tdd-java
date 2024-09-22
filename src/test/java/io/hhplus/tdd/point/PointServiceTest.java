@@ -2,7 +2,9 @@ package io.hhplus.tdd.point;
 
 import static org.mockito.Mockito.when;
 
+import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +22,7 @@ class PointServiceTest {
     private UserPointTable userPointTable;
 
     @Mock
-    private PointHistory pointHistory;
+    private PointHistoryTable pointHistoryTable;
 
     private MockMvc mockMvc;
 
@@ -34,7 +36,7 @@ class PointServiceTest {
      * <p>{@code PointService.searchUserPoint} 메서드에 대한 테스트입니다.</p>
      */
     @Test
-    public void 조회_테스트() {
+    public void 포인트_조회_테스트() {
         when(userPointTable.selectById(1L)).thenReturn(UserPoint.empty(1));
 
         UserPoint actualUserPoint = pointService.searchUserPoint(1);
@@ -42,5 +44,15 @@ class PointServiceTest {
         Assertions.assertEquals(1, actualUserPoint.id());
         Assertions.assertEquals(0, actualUserPoint.point());
     }
+
+    @Test
+    public void 포인트_히스토리_목록_조회_테스트() {
+        when(pointHistoryTable.selectAllByUserId(1L)).thenReturn(List.of());
+
+        List<PointHistory> actualPointHistories = pointService.searchPointHistories(1);
+
+        Assertions.assertEquals(0, actualPointHistories.size());
+    }
+
 
 }
