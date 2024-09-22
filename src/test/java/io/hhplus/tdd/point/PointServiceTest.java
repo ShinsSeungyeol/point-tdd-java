@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class PointServiceTest {
 
     @InjectMocks
-    private PointService pointService;
+    private PointServiceImpl pointService;
 
     @Mock
     private UserPointTable userPointTable;

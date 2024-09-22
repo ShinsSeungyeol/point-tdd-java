@@ -1,18 +1,6 @@
 package io.hhplus.tdd.point;
 
-import io.hhplus.tdd.database.PointHistoryTable;
-import io.hhplus.tdd.database.UserPointTable;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+public interface PointService {
 
-@Service
-@RequiredArgsConstructor
-public class PointService {
-
-    private final UserPointTable userPointTable;
-    private final PointHistoryTable pointHistoryTable;
-
-    public UserPoint searchUserPoint(long userId) {
-        return userPointTable.selectById(userId);
-    }
+    UserPoint searchUserPoint(long userId);
 }
