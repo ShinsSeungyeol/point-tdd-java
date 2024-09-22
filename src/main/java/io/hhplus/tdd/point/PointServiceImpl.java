@@ -29,6 +29,10 @@ public class PointServiceImpl implements PointService {
         UserPoint userPoint = searchUserPoint(userId);
         long remainingPoint = userPoint.point();
 
+        if (amountToCharge <= 0) {
+            throw new IllegalArgumentException("0 이하의 포인트를 충전할 수 없습니다.");
+        }
+
         if (remainingPoint + amountToCharge > MAX_TOTAL_AMOUNT_LIMIT) {
             throw new IllegalArgumentException("최대 잔고를 초과하여 충전할 수 없습니다.");
         }

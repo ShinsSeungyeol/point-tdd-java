@@ -56,8 +56,13 @@ class PointServiceTest {
         Assertions.assertEquals(0, actualPointHistories.size());
     }
 
+    /**
+     * <p>{@code PointService.chargeUserPoint} 메서드에 대한 테스트입니다.</p>
+     *
+     * <pre>사용자가 충전할 때, 10000 포인트를 초과하여 충전할 수 없습니다. </pre>
+     */
     @Test
-    public void 포인트_충전은_최대_잔고량을_넘으면_안된다() {
+    public void 포인트_충전은_최대_잔고량_제한을_넘으면_안된다() {
         long amountToCharge = 10001, userId = 1;
 
         when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(userId));
@@ -67,7 +72,44 @@ class PointServiceTest {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             pointService.chargeUserPoint(userId, amountToCharge);
         });
-
     }
+
+    /**
+     * <p>{@code PointService.chargeUserPoint} 메서드에 대한 테스트입니다.</p>
+     *
+     * <pre>사용자가 충전할 때, 0 포인트 이하는 충전할 수 없습니다. </pre>
+     */
+    @Test
+    public void 충전하려는_포인트가_0_이하면_안된다() {
+        long amountToCharge = 0, userId = 1;
+
+        when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(userId));
+        when(userPointTable.insertOrUpdate(userId, amountToCharge)).thenReturn(
+            new UserPoint(userId, amountToCharge, System.currentTimeMillis()));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            pointService.chargeUserPoint(userId, amountToCharge);
+        });
+    }
+
+    /**
+     * <p>{@code PointService.chargeUserPoint} 메서드에 대한 테스트입니다.</p>
+     *
+     * <pre>사용자가 충전할 때, 0을 초과하고 10000 포인트 이하의 충전은 정상동작 해야 합니다 </pre>
+     */
+    @Test
+    public void 포인트_충전은_최대_잔고량_제한_이하면_정상으로_동작해야한다() {
+        long amountToCharge = 10000, userId = 1;
+
+        when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(userId));
+        when(userPointTable.insertOrUpdate(userId, amountToCharge)).thenReturn(
+            new UserPoint(userId, amountToCharge, System.currentTimeMillis()));
+
+        UserPoint chargedUserPoint = pointService.chargeUserPoint(userId, amountToCharge);
+
+        Assertions.assertEquals(chargedUserPoint.id(), userId);
+        Assertions.assertEquals(chargedUserPoint.point(), amountToCharge);
+    }
+
 
 }
