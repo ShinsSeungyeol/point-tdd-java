@@ -63,7 +63,7 @@ class PointServiceTest {
      */
     @Test
     public void 포인트_충전은_최대_잔고량_제한을_넘으면_안된다() {
-        long amountToCharge = 10001, userId = 1;
+        long amountToCharge = PointConstant.MAX_TOTAL_AMOUNT_LIMIT + 1, userId = 1;
 
         when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(userId));
 
@@ -95,7 +95,7 @@ class PointServiceTest {
      */
     @Test
     public void 포인트_충전은_최대_잔고량_제한_이하면_정상으로_동작해야한다() {
-        long amountToCharge = 10000, userId = 1;
+        long amountToCharge = PointConstant.MAX_TOTAL_AMOUNT_LIMIT, userId = 1;
 
         when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(userId));
         when(userPointTable.insertOrUpdate(userId, amountToCharge)).thenReturn(

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PointServiceImpl implements PointService {
 
-    private final static long MAX_TOTAL_AMOUNT_LIMIT = 10000;
+
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
 
@@ -33,7 +33,7 @@ public class PointServiceImpl implements PointService {
             throw new IllegalArgumentException("0 이하의 포인트를 충전할 수 없습니다.");
         }
 
-        if (remainingPoint + amountToCharge > MAX_TOTAL_AMOUNT_LIMIT) {
+        if (remainingPoint + amountToCharge > PointConstant.MAX_TOTAL_AMOUNT_LIMIT) {
             throw new IllegalArgumentException("최대 잔고를 초과하여 충전할 수 없습니다.");
         }
 
