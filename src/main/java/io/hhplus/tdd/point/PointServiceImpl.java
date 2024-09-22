@@ -37,6 +37,9 @@ public class PointServiceImpl implements PointService {
             throw new IllegalArgumentException("최대 잔고를 초과하여 충전할 수 없습니다.");
         }
 
+        pointHistoryTable.insert(userId, amountToCharge, TransactionType.CHARGE,
+            System.currentTimeMillis());
+
         return userPointTable.insertOrUpdate(userId, amountToCharge);
     }
 }

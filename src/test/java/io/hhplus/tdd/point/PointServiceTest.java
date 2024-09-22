@@ -66,8 +66,6 @@ class PointServiceTest {
         long amountToCharge = 10001, userId = 1;
 
         when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(userId));
-        when(userPointTable.insertOrUpdate(userId, amountToCharge)).thenReturn(
-            new UserPoint(userId, amountToCharge, System.currentTimeMillis()));
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             pointService.chargeUserPoint(userId, amountToCharge);
@@ -84,8 +82,6 @@ class PointServiceTest {
         long amountToCharge = 0, userId = 1;
 
         when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(userId));
-        when(userPointTable.insertOrUpdate(userId, amountToCharge)).thenReturn(
-            new UserPoint(userId, amountToCharge, System.currentTimeMillis()));
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             pointService.chargeUserPoint(userId, amountToCharge);
