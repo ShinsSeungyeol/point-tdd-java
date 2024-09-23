@@ -10,9 +10,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PointServiceImpl implements PointService {
 
+    private final PolicyChecker policyChecker;
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
-
+    
     @Override
     public UserPoint searchUserPoint(long userId) {
         return userPointTable.selectById(userId);
@@ -21,5 +22,18 @@ public class PointServiceImpl implements PointService {
     @Override
     public List<PointHistory> searchPointHistories(long userId) {
         return pointHistoryTable.selectAllByUserId(userId);
+    }
+
+    @Override
+    public UserPoint chargeUserPoint(long userId, long amountToCharge) {
+        UserPoint userPoint = searchUserPoint(userId);
+        long remainingAmount = userPoint.point();
+
+        policyChecker.checkChargePolicy(remainingAmount, amountToCharge);
+
+        pointHistoryTable.insert(userId, amountToCharge, TransactionType.CHARGE,
+            System.currentTimeMillis());
+
+        return userPointTable.insertOrUpdate(userId, amountToCharge);
     }
 }
