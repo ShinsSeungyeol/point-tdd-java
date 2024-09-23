@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point;
 
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,11 +39,15 @@ class PointServiceTest {
      */
     @Test
     public void 포인트_조회_테스트() {
-        when(userPointTable.selectById(1L)).thenReturn(UserPoint.empty(1));
+        long userId = 1L;
+
+        when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(1));
 
         UserPoint actualUserPoint = pointService.searchUserPoint(1);
 
-        Assertions.assertEquals(1, actualUserPoint.id());
+        verify(userPointTable).selectById(userId);
+
+        Assertions.assertEquals(userId, actualUserPoint.id());
         Assertions.assertEquals(0, actualUserPoint.point());
     }
 
@@ -51,9 +56,13 @@ class PointServiceTest {
      */
     @Test
     public void 포인트_히스토리_목록_조회_테스트() {
-        when(pointHistoryTable.selectAllByUserId(1L)).thenReturn(List.of());
+        long userId = 1L;
+
+        when(pointHistoryTable.selectAllByUserId(userId)).thenReturn(List.of());
 
         List<PointHistory> actualPointHistories = pointService.searchPointHistories(1);
+
+        verify(pointHistoryTable).selectAllByUserId(userId);
 
         Assertions.assertEquals(0, actualPointHistories.size());
     }
@@ -64,16 +73,27 @@ class PointServiceTest {
      */
     @Test
     public void 포인트_충전_테스트() {
-        long amountToCharge = PointConstant.MAX_BALANCE_AMOUNT_LIMIT, userId = 1;
+        long userId = 1L;
+        long amountToCharge = 300L;
+        long remainingAmount = 400L;
 
-        when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(userId));
-        when(userPointTable.insertOrUpdate(userId, amountToCharge)).thenReturn(
-            new UserPoint(userId, amountToCharge, System.currentTimeMillis()));
+        UserPoint remainingUserPoint = new UserPoint(userId, remainingAmount,
+            System.currentTimeMillis());
+
+        when(userPointTable.selectById(userId)).thenReturn(remainingUserPoint);
+        when(userPointTable.insertOrUpdate(userId, remainingAmount + amountToCharge)).thenReturn(
+            new UserPoint(userId, remainingAmount + amountToCharge, System.currentTimeMillis())
+        );
 
         UserPoint chargedUserPoint = pointService.chargeUserPoint(userId, amountToCharge);
 
-        Assertions.assertEquals(chargedUserPoint.id(), userId);
-        Assertions.assertEquals(chargedUserPoint.point(), amountToCharge);
+        verify(policyChecker).checkChargePolicy(remainingAmount, amountToCharge);
+        verify(pointHistoryTable).insert(eq(userId), eq(amountToCharge), eq(TransactionType.CHARGE),
+            anyLong());
+        verify(userPointTable).insertOrUpdate(userId, remainingAmount + amountToCharge);
+
+        Assertions.assertEquals(userId, chargedUserPoint.id());
+        Assertions.assertEquals(remainingAmount + amountToCharge, chargedUserPoint.point());
     }
 
     /**
@@ -92,17 +112,11 @@ class PointServiceTest {
 
         UserPoint usedUserPoint = pointService.useUserPoint(userId, amountToUse);
 
-        // policyChecker.checkUsePolicy가 호출되었는지 확인
         verify(policyChecker).checkUsePolicy(remainingAmount, amountToUse);
-
-        // pointHistoryTable.insert가 호출되었는지 확인
-        verify(pointHistoryTable).insert(userId, amountToUse, TransactionType.USE,
+        verify(pointHistoryTable).insert(eq(userId), eq(amountToUse), eq(TransactionType.USE),
             anyLong());
-
-        // insertOrUpdate가 호출되었는지 확인
         verify(userPointTable).insertOrUpdate(userId, remainingAmount - amountToUse);
 
-        // 결과 검증: 반환된 UserPoint가 예상한 결과와 일치하는지 확인
         Assertions.assertEquals(userId, usedUserPoint.id());
         Assertions.assertEquals(remainingAmount - amountToUse, usedUserPoint.point());
     }
