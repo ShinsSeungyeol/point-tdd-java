@@ -25,7 +25,7 @@ public class PointServiceImpl implements PointService {
     }
 
     @Override
-    public UserPoint chargeUserPoint(long userId, long amountToCharge) {
+    public synchronized UserPoint chargeUserPoint(long userId, long amountToCharge) {
         UserPoint userPoint = searchUserPoint(userId);
         long remainingAmount = userPoint.point();
 
@@ -38,7 +38,7 @@ public class PointServiceImpl implements PointService {
     }
 
     @Override
-    public UserPoint useUserPoint(long userId, long amountToUse) {
+    public synchronized UserPoint useUserPoint(long userId, long amountToUse) {
         UserPoint userPoint = searchUserPoint(userId);
         long remainingAmount = userPoint.point();
 
