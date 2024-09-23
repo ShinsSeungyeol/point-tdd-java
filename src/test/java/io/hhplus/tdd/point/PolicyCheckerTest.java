@@ -8,9 +8,7 @@ class PolicyCheckerTest {
     private final PolicyChecker policyChecker = new PolicyCheckerImpl();
 
     /**
-     * <p>{@code PointChecker.checkChargePolicy} 메서드에 대한 테스트입니다.</p>
-     *
-     * <pre>사용자가 충전할 때, 10000 포인트를 초과하여 충전할 수 없습니다. </pre>
+     * 충전 정책 중, 포인트 충전은 최대 잔고량 제한을 넘으면 안되는 정책 단위 테스트 함수
      */
     @Test
     public void 포인트_충전은_최대_잔고량_제한을_넘으면_안된다() {
@@ -23,9 +21,7 @@ class PolicyCheckerTest {
     }
 
     /**
-     * <p>{@code ointChecker.checkChargePolicy} 메서드에 대한 테스트입니다.</p>
-     *
-     * <pre>사용자가 충전할 때, 0 포인트 이하는 충전할 수 없습니다. </pre>
+     * 충전 정책 중, 충전 하려는 포인트가 0 이하면 안되는 정책 단위 테스트 함수
      */
     @Test
     public void 충전하려는_포인트가_0_이하면_안된다() {

@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.test.web.servlet.MockMvc;
 
 class PointServiceTest {
 
@@ -27,15 +26,13 @@ class PointServiceTest {
     @Mock
     private PolicyChecker policyChecker;
 
-    private MockMvc mockMvc;
-
     @BeforeEach
     public void init() {
         MockitoAnnotations.initMocks(this);
     }
 
     /**
-     * <p>{@code PointService.searchUserPoint} 메서드에 대한 테스트입니다.</p>
+     * <p>포인트 조회 정상 동작 단위 테스트</p>
      */
     @Test
     public void 포인트_조회_테스트() {
@@ -48,7 +45,7 @@ class PointServiceTest {
     }
 
     /**
-     * <p>{@code PointService.searchUserHistories} 메서드에 대한 테스트입니다.</p>
+     * 포인트 히스토리 목록 조회 정상 동작 단위 테스트
      */
     @Test
     public void 포인트_히스토리_목록_조회_테스트() {
@@ -61,9 +58,7 @@ class PointServiceTest {
 
 
     /**
-     * <p>{@code PointService.chargeUserPoint} 메서드에 대한 테스트입니다.</p>
-     *
-     * <pre>사용자가 충전할 때, 0을 초과하고 10000 포인트 이하의 충전은 정상동작 해야 합니다 </pre>
+     * 포인트 충전 정상 동작 단위 테스트
      */
     @Test
     public void 포인트_충전_테스트() {

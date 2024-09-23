@@ -13,7 +13,7 @@ public class PointServiceImpl implements PointService {
     private final PolicyChecker policyChecker;
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
-
+    
     @Override
     public UserPoint searchUserPoint(long userId) {
         return userPointTable.selectById(userId);
