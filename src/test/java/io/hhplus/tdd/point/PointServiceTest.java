@@ -1,5 +1,7 @@
 package io.hhplus.tdd.point;
 
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.hhplus.tdd.database.PointHistoryTable;
@@ -74,5 +76,34 @@ class PointServiceTest {
         Assertions.assertEquals(chargedUserPoint.point(), amountToCharge);
     }
 
+    /**
+     * 포인트 사용 정상 동작 단위 테스트
+     */
+    @Test
+    public void 포인트_사용_테스트() {
+        long amountToUse = 300, userId = 1;
+        long remainingAmount = 100;
 
+        when(userPointTable.selectById(userId)).thenReturn(
+            new UserPoint(userId, remainingAmount, System.currentTimeMillis()));
+
+        when(userPointTable.insertOrUpdate(userId, remainingAmount - amountToUse)).thenReturn(
+            new UserPoint(userId, remainingAmount - amountToUse, System.currentTimeMillis()));
+
+        UserPoint usedUserPoint = pointService.useUserPoint(userId, amountToUse);
+
+        // policyChecker.checkUsePolicy가 호출되었는지 확인
+        verify(policyChecker).checkUsePolicy(remainingAmount, amountToUse);
+
+        // pointHistoryTable.insert가 호출되었는지 확인
+        verify(pointHistoryTable).insert(userId, amountToUse, TransactionType.USE,
+            anyLong());
+
+        // insertOrUpdate가 호출되었는지 확인
+        verify(userPointTable).insertOrUpdate(userId, remainingAmount - amountToUse);
+
+        // 결과 검증: 반환된 UserPoint가 예상한 결과와 일치하는지 확인
+        Assertions.assertEquals(userId, usedUserPoint.id());
+        Assertions.assertEquals(remainingAmount - amountToUse, usedUserPoint.point());
+    }
 }

@@ -14,7 +14,7 @@ class PolicyCheckerTest {
     public void 포인트_충전은_최대_잔고량_제한을_넘으면_안된다() {
         long amountToCharge = PointConstant.MAX_BALANCE_AMOUNT_LIMIT + 1, userId = 1;
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        Assertions.assertThrows(IllegalStateException.class, () -> {
             policyChecker.checkChargePolicy(0, amountToCharge);
 
         });

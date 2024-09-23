@@ -13,7 +13,7 @@ public class PointServiceImpl implements PointService {
     private final PolicyChecker policyChecker;
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
-    
+
     @Override
     public UserPoint searchUserPoint(long userId) {
         return userPointTable.selectById(userId);
@@ -34,6 +34,20 @@ public class PointServiceImpl implements PointService {
         pointHistoryTable.insert(userId, amountToCharge, TransactionType.CHARGE,
             System.currentTimeMillis());
 
-        return userPointTable.insertOrUpdate(userId, amountToCharge);
+        return userPointTable.insertOrUpdate(userId, remainingAmount + amountToCharge);
     }
+
+    @Override
+    public UserPoint useUserPoint(long userId, long amountToUse) {
+        UserPoint userPoint = searchUserPoint(userId);
+        long remainingAmount = userPoint.point();
+
+        policyChecker.checkUsePolicy(remainingAmount, amountToUse);
+
+        pointHistoryTable.insert(userId, amountToUse, TransactionType.USE,
+            System.currentTimeMillis());
+
+        return userPointTable.insertOrUpdate(userId, remainingAmount - amountToUse);
+    }
+
 }
