@@ -1,12 +1,15 @@
-package io.hhplus.tdd.point;
+package io.hhplus.tdd.point.service;
 
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.hhplus.tdd.database.PointHistoryTable;
-import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.point.PolicyChecker;
+import io.hhplus.tdd.point.TransactionType;
+import io.hhplus.tdd.point.entity.PointHistory;
+import io.hhplus.tdd.point.entity.UserPoint;
+import io.hhplus.tdd.point.repository.PointHistoryRepository;
+import io.hhplus.tdd.point.repository.UserPointRepository;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,10 +24,10 @@ class PointServiceTest {
     private PointServiceImpl pointService;
 
     @Mock
-    private UserPointTable userPointTable;
+    private UserPointRepository userPointRepository;
 
     @Mock
-    private PointHistoryTable pointHistoryTable;
+    private PointHistoryRepository pointHistoryRepository;
 
     @Mock
     private PolicyChecker policyChecker;
@@ -41,11 +44,11 @@ class PointServiceTest {
     public void 포인트_조회_테스트() {
         long userId = 1L;
 
-        when(userPointTable.selectById(userId)).thenReturn(UserPoint.empty(1));
+        when(userPointRepository.findByUserId(userId)).thenReturn(UserPoint.empty(1));
 
         UserPoint actualUserPoint = pointService.searchUserPoint(1);
 
-        verify(userPointTable).selectById(userId);
+        verify(userPointRepository).findByUserId(userId);
 
         Assertions.assertEquals(userId, actualUserPoint.id());
         Assertions.assertEquals(0, actualUserPoint.point());
@@ -58,11 +61,11 @@ class PointServiceTest {
     public void 포인트_히스토리_목록_조회_테스트() {
         long userId = 1L;
 
-        when(pointHistoryTable.selectAllByUserId(userId)).thenReturn(List.of());
+        when(pointHistoryRepository.findAllByUserId(userId)).thenReturn(List.of());
 
         List<PointHistory> actualPointHistories = pointService.searchPointHistories(1);
 
-        verify(pointHistoryTable).selectAllByUserId(userId);
+        verify(pointHistoryRepository).findAllByUserId(userId);
 
         Assertions.assertEquals(0, actualPointHistories.size());
     }
@@ -80,17 +83,17 @@ class PointServiceTest {
         UserPoint remainingUserPoint = new UserPoint(userId, remainingAmount,
             System.currentTimeMillis());
 
-        when(userPointTable.selectById(userId)).thenReturn(remainingUserPoint);
-        when(userPointTable.insertOrUpdate(userId, remainingAmount + amountToCharge)).thenReturn(
+        when(userPointRepository.findByUserId(userId)).thenReturn(remainingUserPoint);
+        when(userPointRepository.save(userId, remainingAmount + amountToCharge)).thenReturn(
             new UserPoint(userId, remainingAmount + amountToCharge, System.currentTimeMillis())
         );
 
         UserPoint chargedUserPoint = pointService.chargeUserPoint(userId, amountToCharge);
 
         verify(policyChecker).checkChargePolicy(remainingAmount, amountToCharge);
-        verify(pointHistoryTable).insert(eq(userId), eq(amountToCharge), eq(TransactionType.CHARGE),
-            anyLong());
-        verify(userPointTable).insertOrUpdate(userId, remainingAmount + amountToCharge);
+        verify(pointHistoryRepository).save(eq(userId), eq(amountToCharge),
+            eq(TransactionType.CHARGE));
+        verify(userPointRepository).save(userId, remainingAmount + amountToCharge);
 
         Assertions.assertEquals(userId, chargedUserPoint.id());
         Assertions.assertEquals(remainingAmount + amountToCharge, chargedUserPoint.point());
@@ -104,18 +107,17 @@ class PointServiceTest {
         long amountToUse = 300, userId = 1;
         long remainingAmount = 100;
 
-        when(userPointTable.selectById(userId)).thenReturn(
+        when(userPointRepository.findByUserId(userId)).thenReturn(
             new UserPoint(userId, remainingAmount, System.currentTimeMillis()));
 
-        when(userPointTable.insertOrUpdate(userId, remainingAmount - amountToUse)).thenReturn(
+        when(userPointRepository.save(userId, remainingAmount - amountToUse)).thenReturn(
             new UserPoint(userId, remainingAmount - amountToUse, System.currentTimeMillis()));
 
         UserPoint usedUserPoint = pointService.useUserPoint(userId, amountToUse);
 
         verify(policyChecker).checkUsePolicy(remainingAmount, amountToUse);
-        verify(pointHistoryTable).insert(eq(userId), eq(amountToUse), eq(TransactionType.USE),
-            anyLong());
-        verify(userPointTable).insertOrUpdate(userId, remainingAmount - amountToUse);
+        verify(pointHistoryRepository).save(eq(userId), eq(amountToUse), eq(TransactionType.USE));
+        verify(userPointRepository).save(userId, remainingAmount - amountToUse);
 
         Assertions.assertEquals(userId, usedUserPoint.id());
         Assertions.assertEquals(remainingAmount - amountToUse, usedUserPoint.point());
