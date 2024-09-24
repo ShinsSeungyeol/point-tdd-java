@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point.service;
 
+import io.hhplus.tdd.AutoCloseableLock;
 import io.hhplus.tdd.point.PolicyChecker;
 import io.hhplus.tdd.point.TransactionType;
 import io.hhplus.tdd.point.entity.PointHistory;
@@ -7,6 +8,9 @@ import io.hhplus.tdd.point.entity.UserPoint;
 import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +22,12 @@ public class PointServiceImpl implements PointService {
     private final UserPointRepository userPointRepository;
     private final PointHistoryRepository pointHistoryRepository;
 
+    private final ConcurrentHashMap<Long, Lock> lockConcurrentHashMap = new ConcurrentHashMap<>();
+
+    private Lock getUserLock(Long userId) {
+        return lockConcurrentHashMap.computeIfAbsent(userId, k -> new ReentrantLock());
+    }
+
     /**
      * 사용자 포인트 조회
      *
@@ -26,7 +36,9 @@ public class PointServiceImpl implements PointService {
      */
     @Override
     public UserPoint searchUserPoint(long userId) {
-        return userPointRepository.findByUserId(userId);
+        try (AutoCloseableLock lock = new AutoCloseableLock(getUserLock(userId))) {
+            return userPointRepository.findByUserId(userId);
+        }
     }
 
     /**
@@ -37,7 +49,9 @@ public class PointServiceImpl implements PointService {
      */
     @Override
     public List<PointHistory> searchPointHistories(long userId) {
-        return pointHistoryRepository.findAllByUserId(userId);
+        try (AutoCloseableLock lock = new AutoCloseableLock(getUserLock(userId))) {
+            return pointHistoryRepository.findAllByUserId(userId);
+        }
     }
 
     /**
@@ -49,14 +63,16 @@ public class PointServiceImpl implements PointService {
      */
     @Override
     public UserPoint chargeUserPoint(long userId, long amountToCharge) {
-        UserPoint userPoint = searchUserPoint(userId);
-        long remainingAmount = userPoint.point();
+        try (AutoCloseableLock lock = new AutoCloseableLock(getUserLock(userId))) {
+            UserPoint userPoint = searchUserPoint(userId);
+            long remainingAmount = userPoint.point();
 
-        policyChecker.checkChargePolicy(remainingAmount, amountToCharge);
+            policyChecker.checkChargePolicy(remainingAmount, amountToCharge);
 
-        pointHistoryRepository.save(userId, amountToCharge, TransactionType.CHARGE);
+            pointHistoryRepository.save(userId, amountToCharge, TransactionType.CHARGE);
 
-        return userPointRepository.save(userId, remainingAmount + amountToCharge);
+            return userPointRepository.save(userId, remainingAmount + amountToCharge);
+        }
     }
 
     /**
@@ -68,14 +84,15 @@ public class PointServiceImpl implements PointService {
      */
     @Override
     public UserPoint useUserPoint(long userId, long amountToUse) {
-        UserPoint userPoint = searchUserPoint(userId);
-        long remainingAmount = userPoint.point();
+        try (AutoCloseableLock lock = new AutoCloseableLock(getUserLock(userId))) {
+            UserPoint userPoint = searchUserPoint(userId);
+            long remainingAmount = userPoint.point();
 
-        policyChecker.checkUsePolicy(remainingAmount, amountToUse);
+            policyChecker.checkUsePolicy(remainingAmount, amountToUse);
 
-        pointHistoryRepository.save(userId, amountToUse, TransactionType.USE);
+            pointHistoryRepository.save(userId, amountToUse, TransactionType.USE);
 
-        return userPointRepository.save(userId, remainingAmount - amountToUse);
+            return userPointRepository.save(userId, remainingAmount - amountToUse);
+        }
     }
-
 }
