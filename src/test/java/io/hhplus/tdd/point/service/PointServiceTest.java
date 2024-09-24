@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.hhplus.tdd.UserLockManager;
 import io.hhplus.tdd.point.PolicyChecker;
 import io.hhplus.tdd.point.TransactionType;
 import io.hhplus.tdd.point.entity.PointHistory;
@@ -32,6 +33,9 @@ class PointServiceTest {
     @Mock
     private PolicyChecker policyChecker;
 
+    @Mock
+    private UserLockManager userLockManager;
+
     @BeforeEach
     public void init() {
         MockitoAnnotations.initMocks(this);
@@ -48,6 +52,7 @@ class PointServiceTest {
 
         UserPoint actualUserPoint = pointService.searchUserPoint(1);
 
+        verify(userLockManager).createOrGetUserLock(userId);
         verify(userPointRepository).findByUserId(userId);
 
         Assertions.assertEquals(userId, actualUserPoint.id());
@@ -65,6 +70,7 @@ class PointServiceTest {
 
         List<PointHistory> actualPointHistories = pointService.searchPointHistories(1);
 
+        verify(userLockManager).createOrGetUserLock(userId);
         verify(pointHistoryRepository).findAllByUserId(userId);
 
         Assertions.assertEquals(0, actualPointHistories.size());
@@ -90,6 +96,8 @@ class PointServiceTest {
 
         UserPoint chargedUserPoint = pointService.chargeUserPoint(userId, amountToCharge);
 
+        verify(userLockManager).createOrGetUserLock(userId);
+        verify(userPointRepository).findByUserId(userId);
         verify(policyChecker).checkChargePolicy(remainingAmount, amountToCharge);
         verify(pointHistoryRepository).save(eq(userId), eq(amountToCharge),
             eq(TransactionType.CHARGE));
@@ -115,6 +123,8 @@ class PointServiceTest {
 
         UserPoint usedUserPoint = pointService.useUserPoint(userId, amountToUse);
 
+        verify(userLockManager).createOrGetUserLock(userId);
+        verify(userPointRepository).findByUserId(userId);
         verify(policyChecker).checkUsePolicy(remainingAmount, amountToUse);
         verify(pointHistoryRepository).save(eq(userId), eq(amountToUse), eq(TransactionType.USE));
         verify(userPointRepository).save(userId, remainingAmount - amountToUse);

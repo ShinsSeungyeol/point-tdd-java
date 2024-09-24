@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point.service;
 
 import io.hhplus.tdd.AutoCloseableLock;
+import io.hhplus.tdd.UserLockManager;
 import io.hhplus.tdd.point.PolicyChecker;
 import io.hhplus.tdd.point.TransactionType;
 import io.hhplus.tdd.point.entity.PointHistory;
@@ -8,9 +9,6 @@ import io.hhplus.tdd.point.entity.UserPoint;
 import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,15 +16,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PointServiceImpl implements PointService {
 
+    private final UserLockManager userLockManager;
     private final PolicyChecker policyChecker;
     private final UserPointRepository userPointRepository;
     private final PointHistoryRepository pointHistoryRepository;
-
-    private final ConcurrentHashMap<Long, Lock> lockConcurrentHashMap = new ConcurrentHashMap<>();
-
-    private Lock getUserLock(Long userId) {
-        return lockConcurrentHashMap.computeIfAbsent(userId, k -> new ReentrantLock());
-    }
 
     /**
      * 사용자 포인트 조회
@@ -36,7 +29,7 @@ public class PointServiceImpl implements PointService {
      */
     @Override
     public UserPoint searchUserPoint(long userId) {
-        try (AutoCloseableLock lock = new AutoCloseableLock(getUserLock(userId))) {
+        try (AutoCloseableLock lock = userLockManager.createOrGetUserLock(userId)) {
             return userPointRepository.findByUserId(userId);
         }
     }
@@ -49,7 +42,7 @@ public class PointServiceImpl implements PointService {
      */
     @Override
     public List<PointHistory> searchPointHistories(long userId) {
-        try (AutoCloseableLock lock = new AutoCloseableLock(getUserLock(userId))) {
+        try (AutoCloseableLock lock = userLockManager.createOrGetUserLock(userId)) {
             return pointHistoryRepository.findAllByUserId(userId);
         }
     }
@@ -63,8 +56,8 @@ public class PointServiceImpl implements PointService {
      */
     @Override
     public UserPoint chargeUserPoint(long userId, long amountToCharge) {
-        try (AutoCloseableLock lock = new AutoCloseableLock(getUserLock(userId))) {
-            UserPoint userPoint = searchUserPoint(userId);
+        try (AutoCloseableLock lock = userLockManager.createOrGetUserLock(userId)) {
+            UserPoint userPoint = userPointRepository.findByUserId(userId);
             long remainingAmount = userPoint.point();
 
             policyChecker.checkChargePolicy(remainingAmount, amountToCharge);
@@ -84,8 +77,8 @@ public class PointServiceImpl implements PointService {
      */
     @Override
     public UserPoint useUserPoint(long userId, long amountToUse) {
-        try (AutoCloseableLock lock = new AutoCloseableLock(getUserLock(userId))) {
-            UserPoint userPoint = searchUserPoint(userId);
+        try (AutoCloseableLock lock = userLockManager.createOrGetUserLock(userId)) {
+            UserPoint userPoint = userPointRepository.findByUserId(userId);
             long remainingAmount = userPoint.point();
 
             policyChecker.checkUsePolicy(remainingAmount, amountToUse);
